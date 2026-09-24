@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no">
+<title>Shadow Maze</title>
+
+<style>
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
+body{
+    background:#050509;
+    overflow:hidden;
+    touch-action:none;
+}
+
+canvas{
+    display:block;
+    margin:auto;
+    background:#050509;
+}
+
+.controls{
+    position:fixed;
+    bottom:12px;
+    left:50%;
+    transform:translateX(-50%);
+
+    display:grid;
+    grid-template-columns:65px 65px 65px;
+    grid-template-rows:55px 55px;
+
+    gap:5px;
+}
+
+button{
+    border:2px solid #5555ff;
+    border-radius:12px;
+
+    background:#15152b;
+    color:white;
+
+    font-size:25px;
+}
+
+button:active{
+    background:#4444cc;
+}
+
+.up{
+    grid-column:2;
+}
+
+.left{
+    grid-column:1;
+    grid-row:2;
+}
+
+.down{
+    grid-column:2;
+    grid-row:2;
+}
+
+.right{
+    grid-column:3;
+    grid-row:2;
+}
+
+#score{
+    position:fixed;
+    top:10px;
+    left:15px;
+
+    color:white;
+    font-family:Arial;
+    font-size:16px;
+}
+</style>
+</head>
+
+<body>
+
+<canvas id="game"></canvas>
+
+<div id="score">
+    SCORE: 0
+</div>
+
+<div class="controls">
+
+    <button class="up" onclick="setDirection(0,-1)">▲</button>
+
+    <button class="left" onclick="setDirection(-1,0)">◀</button>
+
+    <button class="down" onclick="setDirection(0,1)">▼</button>
+
+    <button class="right" onclick="setDirection(1,0)">▶</button>
+
+</div>
+
+
+<script>
+
+const canvas=document.getElementById("game");
+const ctx=canvas.getContext("2d");
+
+
+/* MAZE */
+
+const maze=[
+
+"1111111111111111111",
+"1000000001000000001",
+"1011111101011111101",
+"1000000000000000001",
+"1011011110111101101",
+"1001000000000010001",
+"1111010111110101111",
+"1000000100010000001",
+"1011110101010111101",
+"1000000000000000001",
+"1011110101010111101",
+"1000000100010000001",
+"1111010111110101111",
+"1001000000000010001",
+"1011011110111101101",
+"1000000000000000001",
+"1011111101011111101",
+"1000000001000000001",
+"1111111111111111111"
+
+];
+
+
+const cols=maze[0].length;
+const rows=maze.length;
+
+const tile=24;
+
+canvas.width=cols*tile;
+canvas.height=rows*tile;
+
+
+/* PLAYER */
+
+let player={
+    x:9,
+    y:9
+};
+
+
+/* DIRECTION */
+
+let dx=0;
+let dy=0;
+
+
+/* SCORE */
+
+let score=0;
+
+
+/* DOTS */
+
+let dots=[];
+
+for(let y=0;y<rows;y++){
+
+    for(let x=0;x<cols;x++){
+
+        if(maze[y][x]=="0"){
+
+            dots.push({
+                x:x,
+                y:y
+            });
+
+        }
+
+    }
+
+}
+
+
+/* CHANGE DIRECTION */
+
+function setDirection(x,y){
+
+    dx=x;
+    dy=y;
+
+}
+
+
+/* KEYBOARD */
+
+document.addEventListener("keydown",function(e){
+
+    if(e.key=="ArrowUp" || e.key=="w"){
+        setDirection(0,-1);
+    }
+
+    if(e.key=="ArrowDown" || e.key=="s"){
+        setDirection(0,1);
+    }
+
+    if(e.key=="ArrowLeft" || e.key=="a"){
+        setDirection(-1,0);
+    }
+
+    if(e.key=="ArrowRight" || e.key=="d"){
+        setDirection(1,0);
+    }
+
+});
+
+
+/* CAN MOVE */
+
+function canMove(x,y){
+
+    if(y<0 || y>=rows || x<0 || x>=cols)
+        return false;
+
+    return maze[y][x]=="0";
+
+}
+
+
+/* MOVE PLAYER */
+
+function movePlayer(){
+
+    let nx=player.x+dx;
+    let ny=player.y+dy;
+
+    if(canMove(nx,ny)){
+
+        player.x=nx;
+        player.y=ny;
+
+        collectDot();
+
+    }
+
+}
+
+
+/* COLLECT DOT */
+
+function collectDot(){
+
+    for(let i=dots.length-1;i>=0;i--){
+
+        if(
+            dots[i].x==player.x &&
+            dots[i].y==player.y
+        ){
+
+            dots.splice(i,1);
+
+            score+=10;
+
+            document.getElementById("score").textContent=
+                "SCORE: "+score;
+
+        }
+
+    }
+
+}
+
+
+/* DRAW MAZE */
+
+function drawMaze(){
+
+    for(let y=0;y<rows;y++){
+
+        for(let x=0;x<cols;x++){
+
+            if(maze[y][x]=="1"){
+
+                ctx.fillStyle="#2020c8";
+
+                ctx.fillRect(
+                    x*tile,
+                    y*tile,
+                    tile,
+                    tile
+                );
+
+                ctx.strokeStyle="#4545ff";
+
+                ctx.strokeRect(
+                    x*tile,
+                    y*tile,
+                    tile,
+                    tile
+                );
+
+            }
+
+        }
+
+    }
+
+}
+
+
+/* DRAW DOTS */
+
+function drawDots(){
+
+    ctx.fillStyle="#fff";
+
+    dots.forEach(dot=>{
+
+        ctx.beginPath();
+
+        ctx.arc(
+            dot.x*tile+tile/2,
+            dot.y*tile+tile/2,
+            3,
+            0,
+            Math.PI*2
+        );
+
+        ctx.fill();
+
+    });
+
+}
+
+
+/* DRAW PLAYER */
+
+function drawPlayer(){
+
+    const x=player.x*tile+tile/2;
+    const y=player.y*tile+tile/2;
+
+    ctx.fillStyle="#ffd83d";
+
+    ctx.beginPath();
+
+    ctx.arc(
+        x,
+        y,
+        9,
+        0.25,
+        Math.PI*2-0.25
+    );
+
+    ctx.lineTo(x,y);
+
+    ctx.fill();
+
+}
+
+
+/* GAME */
+
+let lastMove=0;
+
+function gameLoop(time){
+
+    ctx.clearRect(
+        0,
+        0,
+        canvas.width,
+        canvas.height
+    );
+
+
+    if(time-lastMove>120){
+
+        movePlayer();
+
+        lastMove=time;
+
+    }
+
+
+    drawMaze();
+
+    drawDots();
+
+    drawPlayer();
+
+
+    requestAnimationFrame(gameLoop);
+
+}
+
+
+gameLoop();
+
+</script>
+
+</body>
+</html>
